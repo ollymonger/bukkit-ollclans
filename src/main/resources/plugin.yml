@@ -1,0 +1,4 @@
+name: ollclans
+version: ${project.version}
+main: ollymonger.ollclans.Ollclans
+api-version: 1.16
