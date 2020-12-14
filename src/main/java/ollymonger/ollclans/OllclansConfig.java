@@ -20,16 +20,17 @@ public class OllclansConfig implements Listener {
     Logger getLog = Ollclans.getPlugin().getLogger();
 
     public OllclansConfig(){
-        File config = new File("pluins/Ollclans", "config.yml");
-        FileConfiguration cfg = YamlConfiguration.loadConfiguration(config);
-        try{
-            if(!config.exists()){
-                cfg.save(config);
+        File Config = new File("plugins/Ollclans", "config.yml");
+        FileConfiguration Cfg = YamlConfiguration.loadConfiguration(Config);
+        try {
+            if(!Config.exists()) {
+                Cfg.save(Config);
                 updateConfig();
             } else {
-                getLog.info("Config found! Proceeding to load...");
+                getLog.info("Config already exists!");
             }
         } catch(IOException e) {
+            // Handle any IO exception here
             e.printStackTrace();
         }
     }
@@ -37,14 +38,15 @@ public class OllclansConfig implements Listener {
     public void updateConfig(){
         config.createSection("prefix");
         List<String> prefix = config.getStringList("prefix");
-        prefix.add("spawn");
+        prefix.add("SVR");
         config.set("prefix", prefix);
-        config.createSection("spawn");
-        ConfigurationSection spawn = config.getConfigurationSection("spawn");
-        World world = Bukkit.getServer().getWorld("world");
-        Double x = Bukkit.getWorld("world").getSpawnLocation().getX();
-        spawn.set("world", world);
-        spawn.set("x", x);
+        config.createSection("settings");
+        ConfigurationSection settings = config.getConfigurationSection("settings");
+        settings.set(".clans-protected", false);
+        settings.set(".clans-showtag", true);
+        config.createSection("clans");
+        ConfigurationSection clans = config.getConfigurationSection("clans");
+        Ollclans.getPlugin().saveConfig();
     }
 
 }

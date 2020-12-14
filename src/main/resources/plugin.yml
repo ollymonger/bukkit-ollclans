@@ -2,3 +2,7 @@ name: ollclans
 version: ${project.version}
 main: ollymonger.ollclans.Ollclans
 api-version: 1.16
+commands:
+  createclan:
+    description: create a clan.
+    usage: /<command> <clantag>
