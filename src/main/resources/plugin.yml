@@ -3,6 +3,6 @@ version: ${project.version}
 main: ollymonger.ollclans.Ollclans
 api-version: 1.16
 commands:
-  createclan:
-    description: create a clan.
-    usage: /<command> <clantag>
+  clan:
+    description: general clan commands.
+    usage: /<command> <args0> <args1> <args3>

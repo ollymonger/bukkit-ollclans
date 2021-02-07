@@ -11,6 +11,7 @@ import org.bukkit.event.Listener;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -42,8 +43,21 @@ public class OllclansConfig implements Listener {
         config.set("prefix", prefix);
         config.createSection("settings");
         ConfigurationSection settings = config.getConfigurationSection("settings");
+
         settings.set(".clans-protected", false);
         settings.set(".clans-showtag", true);
+        settings.set(".clans-tagfirstchar", "<");
+        settings.set(".clans-taglastchar", ">");
+        settings.set(".banned-tags", "null");
+            List<String> bannedWords = settings.getStringList(".banned-tags");
+            bannedWords.add("admin");
+            bannedWords.add("moderator");
+            bannedWords.add("helper");
+            bannedWords.add("fuck");
+            bannedWords.add("shit");
+
+        settings.set(".banned-tags", bannedWords);
+
         config.createSection("clans");
         ConfigurationSection clans = config.getConfigurationSection("clans");
         Ollclans.getPlugin().saveConfig();
