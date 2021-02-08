@@ -48,6 +48,7 @@ public class OllclansConfig implements Listener {
         settings.set(".clans-showtag", true);
         settings.set(".clans-tagfirstchar", "<");
         settings.set(".clans-taglastchar", ">");
+        settings.set(".clans-defaultinviteonlystatus", 0);
         settings.set(".banned-tags", "null");
             List<String> bannedWords = settings.getStringList(".banned-tags");
             bannedWords.add("admin");
