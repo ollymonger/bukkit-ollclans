@@ -14,14 +14,13 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import net.milkbowl.vault.economy.Economy;
-import sun.reflect.generics.tree.Tree;
 
 import java.util.*;
-import java.util.function.Supplier;
 
 public final class Ollclans extends JavaPlugin implements Listener {
 
     HashMap<Player, Boolean> awaitingDisbandConfirm = new HashMap<Player, Boolean>();
+    TreeMap<String, List<String>> awaitingInviteConfirm = new TreeMap<>();
     TreeMap<String, List<Integer>> clanMap = new TreeMap<>();
 
     private static Plugin plugin;
@@ -186,15 +185,27 @@ public final class Ollclans extends JavaPlugin implements Listener {
         }
         List<String> clanMembers = this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedClan).getStringList(".members");
         if(clanOwners.contains(name)){
-            sender.sendMessage(ChatColor.GRAY +" /clan disband, /clan setflag, /clan home, /clan members");
-            sender.sendMessage(ChatColor.GRAY +" /clan leaderboard, /clan stats");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <inviteonly> (Toggle whether invite only is required!)");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <invite> <name> (Invite a player to join your clan!)");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <setflag> (Set your clan's home point)");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <disband> (Disband your clan)");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <home> (Visit your clan home)");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <members> (View your clan teammates)");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <leaderboard> (View the clans leaderboard)");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <stats> (View your clan stats)");
         }
         if(clanMembers.contains(name)){
-            sender.sendMessage(ChatColor.GRAY +" /clan leave, /clan home, /clan members");
-            sender.sendMessage(ChatColor.GRAY +" /clan leaderboard, /clan stats");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <leave> (Leave your current clan)");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <home> (Visit your clan home)");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <members> (View your clan teammates)");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <leaderboard> (View the clans leaderboard)");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <stats> (View your clan stats)");
         }
         if(!clanMembers.contains(name) && !clanOwners.contains(name)){
-            sender.sendMessage(ChatColor.GRAY +" /clan create, /clan leaderboard");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <create> <name> <tag> (Create a clan)");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <join> <name> (Join an open clan)");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <accept/decline> <name> (Accept or decline a clan invite!)");
+            sender.sendMessage(ChatColor.GRAY +" - /clan <leaderboard> (View the clans leaderboard)");
         }
         return true;
     }
@@ -415,6 +426,7 @@ public final class Ollclans extends JavaPlugin implements Listener {
                         }
                     }
                 }
+
                 if(args[0].equalsIgnoreCase("leaderboard") && args.length < 2){
                     ShowLeaderboard(player, 1);
                     return true;
@@ -432,6 +444,133 @@ public final class Ollclans extends JavaPlugin implements Listener {
                         }
                     }
                     return true;
+                }
+
+                if(args[0].equalsIgnoreCase("inviteonly")  && args.length < 2){
+                    String string = cfg.getString("prefix");
+                    ConfigurationSection clans = Ollclans.getPlugin().getConfig().getConfigurationSection("clans");
+                    String selectedKey = "";
+                    List<String> clanOwners = new ArrayList<String>();
+                    assert clans != null;
+                    for (String key : clans.getKeys(false)) {
+                        if(Objects.equals(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getString(".owner"), name)){
+                            selectedKey = key;
+                        }
+                    }
+                    assert player != null;
+                    clanOwners.add(this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getString(".owner"));
+                    if(clanOwners.contains(name)){
+                        if(this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getInt(".invite-only") == 0) {// clan is open
+                            this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).set(".invite-only", 1); // now invite only
+                            player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " Your clan has been set to invite only!");
+                            saveConfig();
+                            return true;
+                        } else {
+                            this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).set(".invite-only", 0); // now open
+                            player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " Your clan can now be joined!");
+                            saveConfig();
+                            return true;
+                        }
+                    }
+                    if(!clanOwners.contains(name)){
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You cannot use this command!");
+                        return true;
+                    }
+                }
+
+                if(args[0].equalsIgnoreCase("invite") && args.length < 2){
+                    String string = cfg.getString("prefix");
+                    ConfigurationSection clans = Ollclans.getPlugin().getConfig().getConfigurationSection("clans");
+                    String selectedKey = "";
+                    List<String> clanOwners = new ArrayList<String>();
+                    assert clans != null;
+                    for (String key : clans.getKeys(false)) {
+                        if(Objects.equals(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getString(".owner"), name)){
+                            selectedKey = key;
+                        }
+                    }
+                    assert player != null;
+                    clanOwners.add(this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getString(".owner"));
+                    if(clanOwners.contains(name)){
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " /clan invite <playername> (Must be online)!");
+                         return true;
+                    }
+                    if(!clanOwners.contains(name)){
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You cannot use this command!");
+                        return true;
+                    }
+                }
+                if(args[0].equalsIgnoreCase("invite") && args.length > 1){
+                    String string = cfg.getString("prefix");
+                    ConfigurationSection clans = Ollclans.getPlugin().getConfig().getConfigurationSection("clans");
+                    String selectedKey = "";
+                    List<String> clanOwners = new ArrayList<String>();
+                    assert clans != null;
+                    for (String key : clans.getKeys(false)) {
+                        if(Objects.equals(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getString(".owner"), name)){
+                            selectedKey = key;
+                        }
+                    }
+                    assert player != null;
+                    clanOwners.add(this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getString(".owner"));
+                    if(clanOwners.contains(name)){
+                        Player getTarget = Bukkit.getPlayerExact(args[1]);
+
+                        if(getTarget != null){
+                            boolean dontAllowTargetToJoin = true;
+                            for (String key : clans.getKeys(false)) {
+                                    if(Objects.equals(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getString(".owner"), args[1])){
+                                        selectedKey = key;
+                                        dontAllowTargetToJoin = false;
+                                    }
+                                    if(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getStringList(".members").contains(args[1])){
+                                        selectedKey = key;
+                                        dontAllowTargetToJoin = false;
+                                    }
+                                }
+                            if(!dontAllowTargetToJoin){
+                                player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " Player: " + args[1] + " must leave their clan ("+selectedKey+") to join yours!");
+                            } else {
+                                List<String> targetInvite = new ArrayList<>();
+                                targetInvite.add(0, getTarget.getName());
+                                targetInvite.add(1, selectedKey);
+                                targetInvite.add(2, name);
+                                awaitingInviteConfirm.put(getTarget.getName(), targetInvite);
+                                player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You have invited: "+ args[1] + " to join: "+selectedKey+"!");
+                                getTarget.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You have been invited to join: " + selectedKey + " by: " + name);
+                            }
+                            return true;
+                        }
+                        if(getTarget == null){
+                            player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " This player is not connected!");
+                            return true;
+                        }
+                    }
+                    if(!clanOwners.contains(name)){
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You cannot use this command!");
+                        return true;
+                    }
+                }
+                if(args[0].equalsIgnoreCase("acceptinv")){
+                    String string = cfg.getString("prefix");
+                    if(awaitingInviteConfirm.containsKey(player.getName())){
+                        // You have accepted an invite from: %owner-name% of %new_clan_name% clan.
+                        player.sendMessage(awaitingInviteConfirm.get(player.getName()).get(0) + " accepted invite to join: " +
+                                awaitingInviteConfirm.get(player.getName()).get(1) + " from: " + awaitingInviteConfirm.get(player.getName()).get(2));
+                        this.getConfig().getConfigurationSection("clans").getConfigurationSection(awaitingInviteConfirm.get(player.getName()).get(1)).getStringList(".members").add(player.getName());
+                        //player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You have accepted the invite to join: " +awaitingInviteConfirm.get(player).toString());
+                        awaitingInviteConfirm.remove(player.getName());
+                    }
+                }
+                if(args[0].equalsIgnoreCase("declineinv")){
+                    String string = cfg.getString("prefix");
+                    if(awaitingInviteConfirm.containsKey(player.getName())){
+                        // You have declined an invite from: %owner-name% of %new_clan_name% clan.
+                        player.sendMessage(awaitingInviteConfirm.get(player.getName()).get(0) + " declined invite to join: " +
+                                awaitingInviteConfirm.get(player.getName()).get(1) + " from: " + awaitingInviteConfirm.get(player.getName()).get(2));
+                        //player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You have accepted the invite to join: " +awaitingInviteConfirm.get(player).toString());
+                        awaitingInviteConfirm.remove(player.getName());
+                    }
                 }
             }
 
