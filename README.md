@@ -9,16 +9,16 @@ Please raise any issues you spot or have whilst using this plugin.
 
 ## Available commands:
 - /clan : Main clan command (displays all available cmds, dependant on clan status)
-- /clan <leaderboard> : Displays all created clans, its member count and its invite only status/disbanded status.
-- /clan <create> : Clan create command, takes arguments of <clanname> and <clantag>. Clantag will display color codes!
-- /clan <leave> : Leave a clan command but only if player is not a leader of a clan and actually in a clan.
-- /clan <join> : Join the specified clan, if its invite only status is set to Open.
-- /clan <home> : Visit the clan's home/flag point.
-- /clan <members> : Displays all clan members in players clan, if player is in a clan.
-- /clan <stats> : Display player's current clan's stats.
-- /clan <inviteonly> : Toggle your owned clan's invite only status between being Open or Invite-Only. This is displayed in the leaderboard command. Open will allow players to join, however Invite-Only only allows players to be invited.
-- /clan <disband> : Disband your owned clan, if the player is the leader of a clan. This also set's the leaderboard to display that the clan has been disbanded, sets the member count to 0 and removes the owner.
-- /clan <setflag> : Set your clan's home/flag point. This generates a randomly coloured flag next to the home point and displays a name-tag that is set to the clan's name above the home/flag point.
+- /clan < leaderboard > : Displays all created clans, its member count and its invite only status/disbanded status.
+- /clan < create > : Clan create command, takes arguments of <clanname> and <clantag>. Clantag will display color codes!
+- /clan < leave > : Leave a clan command but only if player is not a leader of a clan and actually in a clan.
+- /clan < join > : Join the specified clan, if its invite only status is set to Open.
+- /clan < home > : Visit the clan's home/flag point.
+- /clan < members > : Displays all clan members in players clan, if player is in a clan.
+- /clan < stats > : Display player's current clan's stats.
+- /clan < inviteonly > : Toggle your owned clan's invite only status between being Open or Invite-Only. This is displayed in the leaderboard command. Open will allow players to join, however Invite-Only only allows players to be invited.
+- /clan < disband > : Disband your owned clan, if the player is the leader of a clan. This also set's the leaderboard to display that the clan has been disbanded, sets the member count to 0 and removes the owner.
+- /clan < setflag > : Set your clan's home/flag point. This generates a randomly coloured flag next to the home point and displays a name-tag that is set to the clan's name above the home/flag point.
 
 ## Methods used:
 - SetUpAndSendChat(Player player, AsyncChatEvent event)
