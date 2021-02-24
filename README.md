@@ -47,7 +47,7 @@ settings:
   - helper
   - fuck
   - shit
-  - clans:
+clans:
   Example01:
     clantag: NUM1
     owner: 'null'
