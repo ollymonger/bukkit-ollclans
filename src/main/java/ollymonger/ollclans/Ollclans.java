@@ -1,14 +1,22 @@
 package ollymonger.ollclans;
 
+import net.milkbowl.vault.chat.Chat;
 import org.bukkit.*;
+import org.bukkit.block.Banner;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -44,7 +52,8 @@ public final class Ollclans extends JavaPlugin implements Listener {
         ConfigurationSection clans = Ollclans.getPlugin().getConfig().getConfigurationSection("clans");
         assert clans != null;
         int sizeoflist = 0;
-        if(this.getConfig().getStringList("clans").size() >= 1){
+        getLogger().info(String.valueOf(this.getConfig().getStringList("clans").size()));
+        if(clans.getKeys(false).size() >= 1){
             for (String key : clans.getKeys(false)) {
                 ArrayList<Integer> clanObjects = new ArrayList<>(3);
                 clanObjects.add(0, this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getStringList(".members").size());
@@ -55,8 +64,9 @@ public final class Ollclans extends JavaPlugin implements Listener {
                 sizeoflist++;
             }
             getLogger().info("Loaded: "+sizeoflist+" clans.");
+            SetUpClanSpawns();
         }
-        if(this.getConfig().getStringList("clans").size() == 0){
+        if(clans.getKeys(false).size() == 0){
             getLogger().info("No clans have been created!");
         }
     }
@@ -119,6 +129,26 @@ public final class Ollclans extends JavaPlugin implements Listener {
             sender.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " Next page >> /clan leaderboard page " + Math.addExact(page, 2));
         }
     }
+
+    public  void paginatemembers(CommandSender sender, SortedMap<Integer, String> map, int page, int pageLength) {
+        FileConfiguration cfg = Ollclans.getPlugin().getConfig();
+        String string = cfg.getString("prefix");
+        sender.sendMessage(ChatColor.DARK_PURPLE + "*-- Clan Members (page " + String.valueOf(page) + " of " + (((map.size() % pageLength) == 0) ? map.size() / pageLength : (map.size() / pageLength) + 1) + ") --*");
+        int i = 0, k = 0;
+        page--;
+        for (final Map.Entry<Integer, String> e : map.entrySet()) {
+            k++;
+            if ((((page * pageLength) + i + 1) == k) && (k != ((page * pageLength) + pageLength + 1))) {
+                i++;
+                sender.sendMessage(ChatColor.DARK_GRAY + " - " + e.getValue());
+            }
+        }
+        if(page < (((map.size() % pageLength) == 0) ? map.size() / pageLength : (map.size() / pageLength))){
+            //checks to see if there is a next page available
+            sender.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " Next page >> /clan members page " + Math.addExact(page, 2));
+        }
+    }
+
 
     public void UpdateClanHashmap(){
         getLogger().info("Clan hashmap is being cleared using leaderboard.");
@@ -210,6 +240,32 @@ public final class Ollclans extends JavaPlugin implements Listener {
         return true;
     }
 
+    public void SetUpClanSpawns(){
+
+        ConfigurationSection clans = Ollclans.getPlugin().getConfig().getConfigurationSection("clans");
+
+        int i = 0;
+        for(String key : clans.getKeys(false)){
+            if(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getConfigurationSection(".flag").getBoolean(".flagSet")){
+                World getWorld = this.getServer().getWorld(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getConfigurationSection(".flag").getString(".flagWorld"));
+                double x = this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getConfigurationSection(".flag").getDouble(".flagX");
+                double y = this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getConfigurationSection(".flag").getDouble(".flagY");
+                double z = this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getConfigurationSection(".flag").getDouble(".flagZ");
+
+                Location locOnTop = new Location(getWorld, x+ 1f, y + 2f, z);
+
+                ArmorStand armorStand = getWorld.spawn(locOnTop, ArmorStand.class);
+                armorStand.setMarker(true);
+                armorStand.setCustomName(key);
+                armorStand.setCustomNameVisible(true);
+                armorStand.setInvisible(true);
+                i++;
+            }
+        }
+
+        getLogger().info("Set up: " + i + " clan spawn points");
+    }
+
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         FileConfiguration cfg = Ollclans.getPlugin().getConfig();
         String name = sender.getName();
@@ -281,7 +337,7 @@ public final class Ollclans extends JavaPlugin implements Listener {
                                     Player pp = (Player) sender;
 
                                     Economy econ = null;
-                                    RegisteredServiceProvider<Economy> economyProvider = getServer().getServicesManager().getRegistration(net.milkbowl.vault.economy.Economy.class);
+                                    RegisteredServiceProvider<Economy> economyProvider = getServer().getServicesManager().getRegistration(Economy.class);
                                     if (economyProvider != null) {
                                         econ = economyProvider.getProvider();
                                     }
@@ -389,7 +445,7 @@ public final class Ollclans extends JavaPlugin implements Listener {
                             this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).set(".invite-only", 2);
                             saveConfig();
                             Economy econ = null;
-                            RegisteredServiceProvider<Economy> economyProvider = getServer().getServicesManager().getRegistration(net.milkbowl.vault.economy.Economy.class);
+                            RegisteredServiceProvider<Economy> economyProvider = getServer().getServicesManager().getRegistration(Economy.class);
                             if (economyProvider != null) {
                                 econ = economyProvider.getProvider();
                             }
@@ -555,9 +611,27 @@ public final class Ollclans extends JavaPlugin implements Listener {
                     String string = cfg.getString("prefix");
                     if(awaitingInviteConfirm.containsKey(player.getName())){
                         // You have accepted an invite from: %owner-name% of %new_clan_name% clan.
-                        player.sendMessage(awaitingInviteConfirm.get(player.getName()).get(0) + " accepted invite to join: " +
-                                awaitingInviteConfirm.get(player.getName()).get(1) + " from: " + awaitingInviteConfirm.get(player.getName()).get(2));
-                        this.getConfig().getConfigurationSection("clans").getConfigurationSection(awaitingInviteConfirm.get(player.getName()).get(1)).getStringList(".members").add(player.getName());
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + "You have accepted an invite from: " + awaitingInviteConfirm.get(player.getName()).get(2) +
+                                " of " + awaitingInviteConfirm.get(player.getName()).get(1) + " clan!");
+
+                        List<String> membersList = this.getConfig().getConfigurationSection("clans").
+                                getConfigurationSection(awaitingInviteConfirm.get(player.getName()).get(1)).
+                                getStringList("members");
+                        membersList.add(awaitingInviteConfirm.get(player.getName()).get(0));
+                        getConfig().getConfigurationSection("clans").getConfigurationSection(awaitingInviteConfirm.get(player.getName()).get(1)).set(".members", membersList);
+                        saveConfig();
+
+                        player.sendMessage(String.valueOf(this.getConfig().getConfigurationSection("clans").
+                                getConfigurationSection(awaitingInviteConfirm.get(player.getName()).get(1)).
+                                getStringList("members")));
+
+                        for(Player all : Bukkit.getOnlinePlayers()){
+                            //loop through all
+                            if(this.getConfig().getConfigurationSection("clans").getConfigurationSection(awaitingInviteConfirm.get(player.getName()).get(1)).getStringList(".members").contains(all.getName())){
+                                all.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " * Player: "+ player.getName() + " has joined your clan!");
+                            }
+                        }
+
                         //player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You have accepted the invite to join: " +awaitingInviteConfirm.get(player).toString());
                         awaitingInviteConfirm.remove(player.getName());
                     }
@@ -572,6 +646,248 @@ public final class Ollclans extends JavaPlugin implements Listener {
                         awaitingInviteConfirm.remove(player.getName());
                     }
                 }
+
+                if(args[0].equalsIgnoreCase("members") && args.length < 2){
+                    String string = cfg.getString("prefix");
+                    SortedMap<Integer, String> map = new TreeMap<Integer, String>(Collections.reverseOrder());
+                    String selectedKey = "";
+                    ConfigurationSection clans = Ollclans.getPlugin().getConfig().getConfigurationSection("clans");
+
+                    for (String key : clans.getKeys(false)) {
+                        if(Objects.equals(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getString(".owner"), name)){
+                            selectedKey = key;
+                        }
+                        if(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getStringList(".members").contains(name)){
+                            selectedKey = key;
+                        }
+                    }
+                    int i = 0;
+                    if(!selectedKey.equals("")){
+                        for(String key : this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getStringList(".members")){
+
+                            map.put(i, ChatColor.GRAY+key);
+                            i++;
+                        }
+                        paginatemembers(sender, map, 1, 5);
+                    } else {
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You cannot use this command!");
+                        return true;
+                    }
+                    return true;
+                }
+
+                if(args[0].equalsIgnoreCase("members") && args[1].equalsIgnoreCase("page") && args.length > 2){
+                    String string = cfg.getString("prefix");
+                    SortedMap<Integer, String> map = new TreeMap<Integer, String>(Collections.reverseOrder());
+                    String selectedKey = "";
+                    ConfigurationSection clans = Ollclans.getPlugin().getConfig().getConfigurationSection("clans");
+
+                    for (String key : clans.getKeys(false)) {
+                        if(Objects.equals(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getString(".owner"), name)){
+                            selectedKey = key;
+                        }
+                        if(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getStringList(".members").contains(name)){
+                            selectedKey = key;
+                        }
+                    }
+                    int i = 0;
+                    if(!selectedKey.equals("")){
+                        for(String key : this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getStringList(".members")){
+
+                            map.put(i, ChatColor.GRAY+key);
+                            i++;
+                        }
+
+
+                        int page = 1;
+                        if(args.length != 3) {
+                            paginatemembers(sender, map, 1, 5);
+                        } else {
+                            page = Integer.parseInt(args[2]);
+                            if (page == 0) {
+                                page = 1;
+                            }
+                            paginatemembers(sender, map, page, 5);
+                        }
+
+                        return true;
+                    } else {
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You cannot use this command!");
+                        return true;
+                    }
+                }
+                if(args[0].equalsIgnoreCase("join") && args.length < 2){
+                    String string = cfg.getString("prefix");
+                    String selectedKey = "";
+                    ConfigurationSection clans = Ollclans.getPlugin().getConfig().getConfigurationSection("clans");
+
+                    for (String key : clans.getKeys(false)) {
+                        if(Objects.equals(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getString(".owner"), name)){
+                            selectedKey = key;
+                        }
+                        if(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getStringList(".members").contains(name)){
+                            selectedKey = key;
+                        }
+                    }
+
+                    if(selectedKey.equalsIgnoreCase("")){
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " /clan join <clanname>!");
+                        return true;
+                    } else {
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You are already in a clan!");
+                        return true;
+                    }
+                }
+                if(args[0].equalsIgnoreCase("join") && args.length == 2){
+                    String string = cfg.getString("prefix");
+                    String selectedKey = "";
+                    ConfigurationSection clans = Ollclans.getPlugin().getConfig().getConfigurationSection("clans");
+
+                    for (String key : clans.getKeys(false)) {
+                        if(Objects.equals(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getString(".owner"), name)){
+                            selectedKey = key;
+                        }
+                        if(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getStringList(".members").contains(name)){
+                            selectedKey = key;
+                        }
+                    }
+
+                    if(selectedKey.equalsIgnoreCase("")){
+                        if(this.getConfig().getConfigurationSection("clans").isConfigurationSection(args[1])){
+                            if(this.getConfig().getConfigurationSection("clans").getConfigurationSection(args[1]).getInt(".invite-only") == 0){
+                                List<String> membersList = this.getConfig().getConfigurationSection("clans").
+                                        getConfigurationSection(args[1]).
+                                        getStringList("members");
+                                membersList.add(player.getName());
+                                this.getConfig().getConfigurationSection("clans").getConfigurationSection(args[1]).set("members", membersList);
+                                saveConfig();
+                                player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You have successfully joined: " + args[1] + " clan.");
+
+                            } else {
+                                player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " This clan cannot be joined (Either invite only or disbanded)!");
+                            }
+                            return true;
+                        } else {
+                            player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " This clan does not exist!!");
+                        }
+                    } else {
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You are already in a clan!");
+                        return true;
+                    }
+                }
+                if(args[0].equalsIgnoreCase("setflag")){
+                    String string = cfg.getString("prefix");
+                    String selectedKey = "";
+                    ConfigurationSection clans = Ollclans.getPlugin().getConfig().getConfigurationSection("clans");
+                    String clanOwner = "";
+
+                    for (String key : clans.getKeys(false)) {
+                        if(Objects.equals(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getString(".owner"), name)){
+                            selectedKey = key;
+                            clanOwner = name;
+                        }
+                    }
+
+                    if(clanOwner.equals(name)){
+
+                        int x = player.getLocation().getBlockX(), y = player.getLocation().getBlockY(), z = player.getLocation().getBlockZ();
+                        Location loc = new Location(player.getWorld(), x, y, z);
+                        Location locOnTop = new Location(player.getWorld(), x+ 1f, y + 2f, z);
+                        if(!this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getConfigurationSection(".flag").getBoolean(".flagSet")){
+                            Block block = loc.getBlock();
+                            List<Material> randomBanner = new ArrayList<>();
+                            randomBanner.add(Material.ORANGE_BANNER);
+                            randomBanner.add(Material.RED_BANNER);
+                            randomBanner.add(Material.BLUE_BANNER);
+                            randomBanner.add(Material.YELLOW_BANNER);
+                            randomBanner.add(Material.BLACK_BANNER);
+
+                            block.setType(randomBanner.get((int)(Math.random() * randomBanner.size())));
+
+                            ArmorStand armorStand = player.getWorld().spawn(locOnTop, ArmorStand.class);
+                            armorStand.setMarker(true);
+                            armorStand.setCustomName(selectedKey);
+                            armorStand.setCustomNameVisible(true);
+                            armorStand.setInvisible(true);
+
+
+                            player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You have set your flag position!");
+                            this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getConfigurationSection(".flag").set(".flagSet", true);
+                            this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getConfigurationSection(".flag").set(".flagWorld", player.getWorld().getName());
+                            this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getConfigurationSection(".flag").set(".flagX", x);
+                            this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getConfigurationSection(".flag").set(".flagY", y);
+                            this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getConfigurationSection(".flag").set(".flagZ", z);
+                            saveConfig();
+                            return true;
+                        } else {
+                            player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " Your clan-spawn has already been set (contact an admin)!");
+                            return true;
+                        }
+                    }
+                }
+
+                if(args[0].equalsIgnoreCase("home")){
+                    String string = cfg.getString("prefix");
+                    SortedMap<Integer, String> map = new TreeMap<Integer, String>(Collections.reverseOrder());
+                    String selectedKey = "";
+                    ConfigurationSection clans = Ollclans.getPlugin().getConfig().getConfigurationSection("clans");
+                    for (String key : clans.getKeys(false)) {
+                        if(Objects.equals(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getString(".owner"), name)){
+                            selectedKey = key;
+                        }
+                        if(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getStringList(".members").contains(name)){
+                            selectedKey = key;
+                        }
+                    }
+                    if(!selectedKey.equalsIgnoreCase("")){
+                        if(this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getConfigurationSection(".flag").getBoolean(".flagSet")){
+                            World world= this.getServer().getWorld(this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getConfigurationSection(".flag").getString(".flagWorld"));
+                            double x = this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getConfigurationSection(".flag").getDouble(".flagX");
+                            double y = this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getConfigurationSection(".flag").getDouble(".flagY");
+                            double z = this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getConfigurationSection(".flag").getDouble(".flagZ");
+
+                            Location location = new Location(world, x, y, z);
+                            player.teleport(location);
+
+                            // Teleport if not hit by anyone! if so, cancel?
+
+                            PlayerTeleportInSeconds(player, location, time);
+
+                            return true;
+                        } else {
+                            player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " Your clan has not set it's flag! (Contact clan owner)");
+                            return true;
+                        }
+                    } else {
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " You cannot use this command!");
+                        return true;
+                    }
+                }
+
+                if(args[0].equalsIgnoreCase("stats")){
+                    String string = cfg.getString("prefix");
+                    String selectedKey = "";
+                    ConfigurationSection clans = Ollclans.getPlugin().getConfig().getConfigurationSection("clans");
+
+                    for (String key : clans.getKeys(false)) {
+                        if(Objects.equals(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getString(".owner"), name)){
+                            selectedKey = key;
+                        }
+                        if(this.getConfig().getConfigurationSection("clans").getConfigurationSection(key).getStringList(".members").contains(name)){
+                            selectedKey = key;
+                        }
+                    }
+
+                    if(!selectedKey.equalsIgnoreCase("")){
+                        player.sendMessage(ChatColor.DARK_PURPLE +" *-------- "+ ChatColor.GRAY + "CLAN: " + selectedKey + " stats " +ChatColor.DARK_PURPLE+"--------*");
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " Level: " + ChatColor.AQUA + this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getInt(".level"));
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " Balance: " + ChatColor.GREEN + "$" + this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getInt(".balance"));
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " Members: " + this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getStringList(".members").size());
+                        player.sendMessage(ChatColor.RED + string + ChatColor.GRAY + " Home set: " + this.getConfig().getConfigurationSection("clans").getConfigurationSection(selectedKey).getConfigurationSection(".flag").getBoolean(".flagSet"));
+
+                    }
+                }
+
             }
 
         }
@@ -588,5 +904,7 @@ public final class Ollclans extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+
+        getServer().dispatchCommand(Bukkit.getConsoleSender(), "minecraft:kill @e[type=armor_stand]");
     }
 }
