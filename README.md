@@ -27,3 +27,88 @@ Please raise any issues you spot or have whilst using this plugin.
   - This method will loop through all created clans (but only if there has been atleast 1 created) and place a new armour stand with a name-tag of the clan's name.
 - UpdateClanHashMap()
   - Every single time a player uses the leaderboard command, it will refresh the hashmap which is stored for the leaderboard with the most recent values. This allows the plugin to format the leaderboard to contain specific clan data & paginate the pages if there are more than 5 clans.
+
+## Examples:
+This section will detail examples for the commands above, and what the configuration file COULD look like once in use.
+
+Example config file:
+```
+prefix:
+- SVR
+settings:
+  clans-protected: false
+  clans-showtag: true
+  clans-tagfirstchar: '<'
+  clans-taglastchar: '>'
+  clans-defaultinviteonlystatus: 0
+  banned-tags:
+  - admin
+  - moderator
+  - helper
+  - fuck
+  - shit
+  - clans:
+  Example01:
+    clantag: NUM1
+    owner: 'null'
+    level: 1
+    balance: 300
+    invite-only: 2
+    disbanded: true
+    members: {}
+    flag:
+      flagSet: false
+      flagX: 1
+      flagY: 1
+      flagZ: 1
+  Example02:
+    clantag: NUM2
+    owner: yllo
+    level: 1
+    balance: 300
+    invite-only: 1
+    disbanded: false
+    members: 
+    - ExampleUser1
+    - ExampleUser2
+    flag:
+      flagSet: true
+      flagWorld: world
+      flagX: -95
+      flagY: 73
+      flagZ: -264
+  Example03:
+    clantag: NUM3
+    owner: Example4
+    level: 1
+    balance: 300
+    invite-only: 1
+    disbanded: false
+    members: {}
+    flag:
+      flagSet: false
+      flagX: 1
+      flagY: 1
+      flagZ: 1
+```
+
+
+### Settings
+#### This section contains all of the essential settings for ollclans to run.
+  - Prefix is the prefix used in the messages sent to the player when using /clan commands. For example:
+    - [SVR] You cannot use this command!
+    - [SVR] /clan create < name > < tag > 
+  - clans-protected is currently unused, however is in place for future development.
+  - clans-showtag is a simple boolean which determines whether the clantag is shown or not.
+  - clans-tagfirstchar and clans-taglastchar is the characters which wrap around the clantag.
+  - clans-defaultinviteonlystatus:
+    - 0: Open for players joining.
+    - 1: Invite Only, players cannot /clan join 
+  - banned-tags can contain any words that you do not want as a clan tag. This will also disable players from using ANY of these words as their clan name!
+
+
+### Clans
+#### This section contains explainations for the example clans above.
+- Example01 is an example of a disbanded clan. As you can see, the owner is set to null and members list is cleared, the invite only status is the set to 2 and the disbanded status is set to true.
+- Example02 is an example of a clan with two members and its flag set. Once a clan has set its flag, the flagSet stat is set to true and the home/flag position is set. This then allows players to visit their /clan home. Currently, the only way for a player to reset their flag is if an admin changes their clan's flagSet stat to false again.
+- Example03 is an example of a clan without any members and without its flag set. If you are using the example config and want to add yourself into this example clan, please remove the braces, place a line break and a hyphen below with your name and then /reload the server.
