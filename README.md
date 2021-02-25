@@ -45,8 +45,8 @@ settings:
   - admin
   - moderator
   - helper
-  - fuck
-  - shit
+  - Swear1
+  - SwearWordExample2
 clans:
   Example01:
     clantag: NUM1
